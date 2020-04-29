@@ -25,7 +25,7 @@
     },    
     {
         "ParameterKey" : "WebServerInstanceType",
-        "ParameterValue" :  "t3.micro"
+        "ParameterValue" :  "t3.medium"
     },
     {
         "ParameterKey" : "WebServerImageID",
