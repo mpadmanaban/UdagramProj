@@ -11,10 +11,6 @@ Parameters:
     Description: Instance Type to be used for webserver EC2 instances
     Type: String 
   
-  WebServerKeyName: 
-    Description: SSH Key Name for accessing the webservers via ssh
-    Type: String
-
   WebServerImageID:
     Description: AWS Image ID to be used as base for webservers
     Type: String
@@ -83,7 +79,7 @@ Resources:
       - IpProtocol: tcp
         FromPort: 22
         ToPort: 22
-        CidrIp: 0.0.0.0/0
+        CidrIp: 174.72.246.236/32
       SecurityGroupEgress:
       - IpProtocol: tcp
         FromPort: 0
@@ -131,8 +127,7 @@ Resources:
           cd /var/www/html
           aws s3 cp s3://udacity-demo-1/udacity.zip .
           unzip -o udacity.zip
-      ImageId: !Ref WebServerImageID
-      KeyName: !Ref WebServerKeyName
+      ImageId: !Ref WebServerImageID      
       SecurityGroups:
       - Ref: WebServerSecGroup
       InstanceType: !Ref WebServerInstanceType
@@ -142,7 +137,7 @@ Resources:
         Ebs:
           VolumeSize: '10'
 
-  WebAppGroup:
+  WebAppAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
       VPCZoneIdentifier:
@@ -155,7 +150,7 @@ Resources:
       TargetGroupARNs:
       - Ref: WebAppTargetGroup
   
-  WebAppLB:
+  WebAppLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
       Subnets:
@@ -172,7 +167,7 @@ Resources:
         TargetGroupArn:
           Ref: WebAppTargetGroup
       LoadBalancerArn:
-        Ref: WebAppLB
+        Ref: WebAppLoadBalancer
       Port: '80'
       Protocol: HTTP
 
@@ -202,11 +197,37 @@ Resources:
       VpcId: 
         Fn::ImportValue:
           Fn::Sub: "${EnvironmentName}-VPCID"
-
+ 
+  BastionHost1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType:
+        Ref: BastionHostInstanceType       
+      KeyName:
+        Ref: BastionHostKeyName
+      ImageId:
+        Ref: BastionHostImageID      
+      NetworkInterfaces: 
+      - AssociatePublicIpAddress: "true"
+        DeviceIndex: "0"
+        GroupSet: 
+          - Ref: "BastionHostSecGroup"
+        SubnetId: 
+          Fn::ImportValue: !Sub "${EnvironmentName}-PUB1-SN"
+      Tags: 
+        - Key: Name 
+          Value: !Sub ${EnvironmentName}-BastionHost1
+          
 Outputs:
 
-   LoadBanlancerEndpoint:
+  LoadBalancerEndpoint:
     Description: Url to access end point
-    Value: !Join [ "", [ 'http://', !GetAtt WebAppLB.DNSName  ]]
+    Value: !Join [ "", [ 'http://', !GetAtt WebAppLoadBalancer.DNSName ]]
     Export:
       Name: !Sub ${EnvironmentName}-DNSURL
+
+  BastionHost1DNS: 
+    Description: A DNS Name of the Bastion Host
+    Value: !GetAtt BastionHost1.PublicDnsName
+    Export:
+      Name: !Sub ${EnvironmentName}-BastionHost1DNS
