@@ -9,13 +9,11 @@ if "%1" == "update"  goto UPDATE
 goto USAGE
 
 :CREATE_NEW
-call create.bat UdagramNetwork udagram-nw.yml udagram-nw.json 
-call create.bat UdagramServers udagram-srv.yml udagram-srv.json
+call create.bat UdagramCfn udagramCfn.yml udagramCfn.json 
 goto END
 
 :UPDATE
-call update.bat UdagramNetwork udagram-nw.yml udagram-nw.json
-call update.bat UdagramServers udagram-srv.yml udagram-srv.json
+call update.bat UdagramCfn udagramCfn.yml udagramCfn.json
 goto END
 
 :USAGE 
